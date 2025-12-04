@@ -1,20 +1,22 @@
 package at.technikum;
 
 import at.technikum.data.Database;
-import java.sql.Connection;
-import java.sql.SQLException;
+import at.technikum.persistence.UserRepository;
+import at.technikum.domain.User;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Server starting...");
+        System.out.println("App is starting...");
+        Database database = new Database();
+        UserRepository userRepository = new UserRepository(database);
 
-        Database db = new Database();
+        System.out.println("Teste Insert...");
+        User neuerUser = User.builder()
+                .username("testuser")
+                .password("12345")
+                .build();
 
-        // Teste die Verbindung (wie in deinem Snippet, aber sauber getrennt)
-        try (Connection conn = db.getConnection()) {
-            System.out.println("Connection to Database successful!");
-        } catch (SQLException e) {
-            System.err.println("Connection failed: " + e.getMessage());
-        }
+        userRepository.insert(neuerUser);
+        System.out.println("Neuer User eingefügt: " + neuerUser);
     }
 }

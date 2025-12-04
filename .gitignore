@@ -2,13 +2,21 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-.kotlin
+
+### Java General ###
+*.class
+*.log
+*.ctxt
+*.jar
+*.war
+*.zip
+
+### Secrets & Environment (Sicherheit!) ###
+.env
+.env.local
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -21,6 +29,7 @@ target/
 .settings
 .springBeans
 .sts4-cache
+bin/
 
 ### NetBeans ###
 /nbproject/private/
@@ -29,11 +38,12 @@ target/
 /nbdist/
 /.nb-gradle/
 build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
 
-### Mac OS ###
+### Operating Systems ###
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini

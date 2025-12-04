@@ -1,24 +1,29 @@
 package at.technikum.server;
+
+import at.technikum.data.Database;
+import at.technikum.persistence.UserRepository;
+import at.technikum.server.handlers.UserHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.io.OutputStream;
 
 
 public class ServerApplication {
 
     public void start() throws IOException {
+        // HTTP Server erstellen
         HttpServer server = HttpServer.create(new InetSocketAddress(10001), 0);
-        server.createContext("/echo", exchange -> {
-            String response = "Server is running!";
-            exchange.sendResponseHeaders(200, response.getBytes().length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(response.getBytes());
-            }
-        });
 
-        server.setExecutor(null); // creates a default executor
+        Database database = new Database();
+        UserRepository userRepository = new UserRepository(database);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        server.createContext("/users", new UserHandler(userRepository, objectMapper));
+
+        server.setExecutor(null);
         server.start();
-        System.out.println("Server started on port 10001...");
+        System.out.println("Server started on port 10001");
     }
 }

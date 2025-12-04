@@ -11,7 +11,7 @@ public class UserRepository {
         this.database = database;
     }
 
-    public User insert(User user) {
+    public User save(User user) {
         String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
         try (Connection conn = database.getConnection();
              PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {

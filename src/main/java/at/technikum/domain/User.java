@@ -8,10 +8,7 @@ public class User {
 
         public User() {
     }
-    public Integer getID() {
-        return id;
-    }
-    public int getId() {
+    public Integer getId() {
         return id;
     }
     public String getUsername() {

@@ -37,7 +37,7 @@ public class UserRepository {
         }
     }
 
-    public User findbyUsername(String username) {
+    public User findByUsername(String username) {
         String sql = "SELECT * FROM users WHERE username = ?";
         try (Connection conn = database.getConnection();
             PreparedStatement statement = conn.prepareStatement(sql)) {

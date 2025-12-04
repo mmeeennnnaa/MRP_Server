@@ -36,4 +36,26 @@ public class UserRepository {
             throw new RuntimeException("Error saving user", e);
         }
     }
+
+    public User findbyUsername(String username) {
+        String sql = "SELECT * FROM users WHERE username = ?";
+        try (Connection conn = database.getConnection();
+            PreparedStatement statement = conn.prepareStatement(sql)) {
+
+            statement.setString(1, username);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                return User.builder()
+                        .id(rs.getInt("id"))
+                        .username(rs.getString("username"))
+                        .password(rs.getString("password"))
+                        .build();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error finding user by username", e);
+        }
+        return null;
+    }
 }

@@ -4,6 +4,7 @@ import at.technikum.data.Database;
 import at.technikum.domain.Media;
 
 import java.sql.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -15,15 +16,16 @@ public class MediaRepository {
     }
 
     public Media save(Media media) {
-        String sql = "INSERT INTO media (type, title, description, release_year, age_restriction, genre, creator_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO media (media_type, title, description, release_year, age_restriction, genres, creator_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = database.getConnection();
              PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            statement.setString(1, media.getType());
+            statement.setString(1, media.getMediaType());
             statement.setString(2, media.getTitle());
             statement.setString(3, media.getDescription());
             statement.setInt(4, media.getReleaseYear());
             statement.setInt(5, media.getAgeRestriction());
-            statement.setString(6, media.getGenre());
+            String genresString = String.join(",", media.getGenres());
+            statement.setString(6, genresString);
             statement.setInt(7, media.getCreatorId());
             statement.executeUpdate();
 
@@ -32,11 +34,11 @@ public class MediaRepository {
                     return Media.builder()
                             .id(generatedKeys.getInt(1))
                             .title(media.getTitle())
-                            .type(media.getType())
+                            .mediaType(media.getMediaType())
                             .description(media.getDescription())
                             .releaseYear(media.getReleaseYear())
                             .ageRestriction(media.getAgeRestriction())
-                            .genre(media.getGenre())
+                            .genre(media.getGenres())
                             .creatorId(media.getCreatorId())
                             .build();
                 } else {
@@ -88,17 +90,18 @@ public class MediaRepository {
     }
 
     public void update(Media media) {
-        String sql = "UPDATE media SET type = ?, title = ?, description = ?, release_year = ?, age_restriction = ?, genre = ?, creator_id = ? WHERE id = ?";
+        String sql = "UPDATE media SET media_type = ?, title = ?, description = ?, release_year = ?, age_restriction = ?, genres = ?, creator_id = ? WHERE id = ?";
 
         try (Connection conn = database.getConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
 
-            statement.setString(1, media.getType());
+            statement.setString(1, media.getMediaType());
             statement.setString(2, media.getTitle());
             statement.setString(3, media.getDescription());
             statement.setInt(4, media.getReleaseYear());
             statement.setInt(5, media.getAgeRestriction());
-            statement.setString(6, media.getGenre());
+            String genresString = String.join(",", media.getGenres());
+            statement.setString(6, genresString);
             statement.setInt(7, media.getCreatorId());
             statement.setInt(8, media.getId());
             statement.executeUpdate();
@@ -125,14 +128,19 @@ public class MediaRepository {
     }
     //Hilfsmethode um ResultSet in Media zu mappen
     private Media mapResultSet(ResultSet rs) throws SQLException {
+        String genresString = rs.getString("genres");
+        List<String> genresList = new ArrayList<>();
+        if (genresString != null && !genresString.isEmpty()) {
+            genresList = Arrays.asList(genresString.split(","));
+        }
         return Media.builder()
                 .id(rs.getInt("id"))
-                .type(rs.getString("type"))
+                .mediaType(rs.getString("media_type"))
                 .title(rs.getString("title"))
                 .description(rs.getString("description"))
                 .releaseYear(rs.getInt("release_year"))
                 .ageRestriction(rs.getInt("age_restriction"))
-                .genre(rs.getString("genre"))
+                .genre(genresList)
                 .creatorId(rs.getInt("creator_id"))
                 .build();
     }

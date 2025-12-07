@@ -31,7 +31,7 @@ public class MediaHandler implements HttpHandler {
             String Method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
 
-            if (path.equals("/media")) {
+            if (path.equals("/api/media")) {
                 if ("GET".equals(Method)) {
                     handleGetAll(exchange);
                 } else if ("POST".equals(Method)) {
@@ -39,8 +39,8 @@ public class MediaHandler implements HttpHandler {
                 } else {
                     exchange.sendResponseHeaders(405, -1); // Method Not Allowed
                 }
-            } else if (path.startsWith("/media/")) {
-                String idString = path.substring("/media/".length());
+            } else if (path.startsWith("/api/media/")) {
+                String idString = path.substring("/api/media/".length());
                 int mediaId = Integer.parseInt(idString);
 
                 if ("PUT".equals(Method)) {
@@ -86,11 +86,11 @@ public class MediaHandler implements HttpHandler {
 
         Media mediaToSave = Media.builder()
                 .title(mediaInput.getTitle())
-                .type(mediaInput.getType())
+                .mediaType(mediaInput.getMediaType())
                 .description(mediaInput.getDescription())
                 .releaseYear(mediaInput.getReleaseYear())
                 .ageRestriction(mediaInput.getAgeRestriction())
-                .genre(mediaInput.getGenre())
+                .genre(mediaInput.getGenres())
                 .creatorId(user.getId())
                 .build();
         Media savedMedia = mediaRepository.save(mediaToSave);
@@ -116,11 +116,11 @@ public class MediaHandler implements HttpHandler {
         Media mediaToUpdate = Media.builder()
                 .id(mediaId)
                 .title(updateData.getTitle())
-                .type(updateData.getType())
+                .mediaType(updateData.getMediaType())
                 .description(updateData.getDescription())
                 .releaseYear(updateData.getReleaseYear())
                 .ageRestriction(updateData.getAgeRestriction())
-                .genre(updateData.getGenre())
+                .genre(updateData.getGenres())
                 .creatorId(existingMedia.getCreatorId())
                 .build();
 

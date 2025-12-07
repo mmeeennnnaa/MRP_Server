@@ -17,18 +17,18 @@ public class ServerApplication {
 
     public void start() throws IOException {
         // HTTP Server erstellen
-        HttpServer server = HttpServer.create(new InetSocketAddress(10001), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
 
         Database database = new Database();
         UserRepository userRepository = new UserRepository(database);
         ObjectMapper objectMapper = new ObjectMapper();
         MediaRepository mediaRepository = new MediaRepository(database);
 
-        server.createContext("/users", new UserHandler(userRepository, objectMapper));
-        server.createContext("/users/login", new LoginHandler(userRepository, objectMapper));
-        server.createContext("/media", new MediaHandler(mediaRepository, userRepository, objectMapper));
+        server.createContext("/api/users/register", new UserHandler(userRepository, objectMapper));
+        server.createContext("/api/users/login", new LoginHandler(userRepository, objectMapper));
+        server.createContext("/api/media", new MediaHandler(mediaRepository, userRepository, objectMapper));
         server.setExecutor(null);
         server.start();
-        System.out.println("Server started on port 10001");
+        System.out.println("Server started on http://localhost:8080");
     }
 }

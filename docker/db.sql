@@ -5,11 +5,11 @@ CREATE TABLE IF NOT EXISTS users (
     );
 CREATE TABLE IF NOT EXISTS media (
     id SERIAL PRIMARY KEY,
-    type VARCHAR(50), -- 'Movie', 'Series', 'Game'
+    media_type VARCHAR(50), -- 'Movie', 'Series', 'Game'
     title VARCHAR(255) NOT NULL,
     description TEXT,
     release_year INT,
     age_restriction INT,
-    genre VARCHAR(255),
+    genres TEXT,
     creator_id INT REFERENCES users(id) -- Verknüpfung: Welcher User hat es erstellt?
 );

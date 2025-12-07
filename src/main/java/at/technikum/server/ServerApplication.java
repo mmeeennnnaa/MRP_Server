@@ -2,8 +2,10 @@ package at.technikum.server;
 
 import at.technikum.data.Database;
 import at.technikum.persistence.UserRepository;
+import at.technikum.persistence.MediaRepository;
 import at.technikum.server.handlers.LoginHandler;
 import at.technikum.server.handlers.UserHandler;
+import at.technikum.server.handlers.MediaHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,9 +22,11 @@ public class ServerApplication {
         Database database = new Database();
         UserRepository userRepository = new UserRepository(database);
         ObjectMapper objectMapper = new ObjectMapper();
+        MediaRepository mediaRepository = new MediaRepository(database);
 
         server.createContext("/users", new UserHandler(userRepository, objectMapper));
         server.createContext("/users/login", new LoginHandler(userRepository, objectMapper));
+        server.createContext("/media", new MediaHandler(mediaRepository, userRepository, objectMapper));
         server.setExecutor(null);
         server.start();
         System.out.println("Server started on port 10001");

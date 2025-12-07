@@ -8,6 +8,7 @@ public class Media
     private String description;
     private Integer releaseYear;
     private Integer ageRestriction;
+    private String genre;
     private Integer creatorId;
 
     public Media() {
@@ -30,6 +31,9 @@ public class Media
     }
     public Integer getAgeRestriction() {
         return ageRestriction;
+    }
+    public String getGenre() {
+        return genre;
     }
     public Integer getCreatorId() {
         return creatorId;
@@ -63,6 +67,10 @@ public class Media
         }
         public MediaBuilder ageRestriction(Integer ageRestriction) {
             media.ageRestriction = ageRestriction;
+            return this;
+        }
+        public MediaBuilder genre(String genre) {
+            media.genre = genre;
             return this;
         }
         public MediaBuilder creatorId(Integer creatorId) {

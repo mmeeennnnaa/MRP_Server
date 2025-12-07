@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS media (
     description TEXT,
     release_year INT,
     age_restriction INT,
+    genre VARCHAR(255),
     creator_id INT REFERENCES users(id) -- Verknüpfung: Welcher User hat es erstellt?
 );

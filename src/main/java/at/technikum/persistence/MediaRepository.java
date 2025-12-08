@@ -38,7 +38,7 @@ public class MediaRepository {
                             .description(media.getDescription())
                             .releaseYear(media.getReleaseYear())
                             .ageRestriction(media.getAgeRestriction())
-                            .genre(media.getGenres())
+                            .genres(media.getGenres())
                             .creatorId(media.getCreatorId())
                             .build();
                 } else {
@@ -126,6 +126,7 @@ public class MediaRepository {
             throw new RuntimeException("Error deleting media", e);
         }
     }
+
     //Hilfsmethode um ResultSet in Media zu mappen
     private Media mapResultSet(ResultSet rs) throws SQLException {
         String genresString = rs.getString("genres");
@@ -140,7 +141,7 @@ public class MediaRepository {
                 .description(rs.getString("description"))
                 .releaseYear(rs.getInt("release_year"))
                 .ageRestriction(rs.getInt("age_restriction"))
-                .genre(genresList)
+                .genres(genresList)
                 .creatorId(rs.getInt("creator_id"))
                 .build();
     }

@@ -1,6 +1,4 @@
 package at.technikum.domain;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.w3c.dom.ls.LSException;
 
 import java.util.List;
 
@@ -43,6 +41,31 @@ public class Media
         return creatorId;
     }
 
+    public void setId(Integer id) {
+        this.id = id;
+    }
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
+    }
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    public void setReleaseYear(Integer releaseYear) {
+        this.releaseYear = releaseYear;
+    }
+    public void setAgeRestriction(Integer ageRestriction) {
+        this.ageRestriction = ageRestriction;
+    }
+    public void setGenres(List<String> genres) {
+        this.genres = genres;
+    }
+    public void setCreatorId(Integer creatorId) {
+        this.creatorId = creatorId;
+    }
+
     public static MediaBuilder builder() {
         return new MediaBuilder();
     }
@@ -73,7 +96,7 @@ public class Media
             media.ageRestriction = ageRestriction;
             return this;
         }
-        public MediaBuilder genre(List<String> genres) {
+        public MediaBuilder genres(List<String> genres) {
             media.genres = genres;
             return this;
         }

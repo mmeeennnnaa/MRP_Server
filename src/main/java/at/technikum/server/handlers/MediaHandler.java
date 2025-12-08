@@ -90,7 +90,7 @@ public class MediaHandler implements HttpHandler {
                 .description(mediaInput.getDescription())
                 .releaseYear(mediaInput.getReleaseYear())
                 .ageRestriction(mediaInput.getAgeRestriction())
-                .genre(mediaInput.getGenres())
+                .genres(mediaInput.getGenres())
                 .creatorId(user.getId())
                 .build();
         Media savedMedia = mediaRepository.save(mediaToSave);
@@ -120,7 +120,7 @@ public class MediaHandler implements HttpHandler {
                 .description(updateData.getDescription())
                 .releaseYear(updateData.getReleaseYear())
                 .ageRestriction(updateData.getAgeRestriction())
-                .genre(updateData.getGenres())
+                .genres(updateData.getGenres())
                 .creatorId(existingMedia.getCreatorId())
                 .build();
 

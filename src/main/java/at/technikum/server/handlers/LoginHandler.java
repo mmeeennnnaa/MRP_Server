@@ -23,7 +23,7 @@ public class LoginHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
 
-        // Allow only POST
+        // only POST allowed
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             exchange.sendResponseHeaders(405, -1);
             return;
@@ -32,38 +32,49 @@ public class LoginHandler implements HttpHandler {
         try {
             User requestUser = readRequestBody(exchange);
 
+            // validate request
             if (requestUser == null ||
                     requestUser.getUsername() == null ||
                     requestUser.getPassword() == null) {
 
-                writeJson(exchange, 400, "{\"message\":\"Both username and password must be provided\"}");
+                writeJson(exchange, 400,
+                        "{\"message\":\"Username and password are required\"}");
                 return;
             }
 
+            // find user
             User dbUser = users.findByUsername(requestUser.getUsername());
 
-            // Validate login
-            if (dbUser == null || !dbUser.getPassword().equals(requestUser.getPassword())) {
-                writeJson(exchange, 401, "{\"message\":\"Invalid username or password\"}");
+            // check credentials
+            if (dbUser == null ||
+                    !dbUser.getPassword().equals(requestUser.getPassword())) {
+
+                writeJson(exchange, 401,
+                        "{\"message\":\"Invalid username or password\"}");
                 return;
             }
 
-            // Generate token
+            // generate token
             String token = generateToken(dbUser.getUsername());
 
-            // Persist token
+            // set token on user object
+            dbUser.setToken(token);
+
+            // persist token
             users.saveToken(dbUser.getId(), token);
 
-            String response = "{ \"token\": \"" + token + "\" }";
-            writeJson(exchange, 200, response);
+            // response
+            String responseJson = "{ \"token\": \"" + token + "\" }";
+            writeJson(exchange, 200, responseJson);
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            writeJson(exchange, 500, "{\"message\":\"Internal server error during login\"}");
+        } catch (Exception e) {
+            e.printStackTrace();
+            writeJson(exchange, 500,
+                    "{\"message\":\"Internal server error\"}");
         }
     }
 
-    // --------------------- Helper Methods ---------------------
+    // ---------------- helper methods ----------------
 
     private User readRequestBody(HttpExchange exchange) {
         try (InputStream is = exchange.getRequestBody()) {

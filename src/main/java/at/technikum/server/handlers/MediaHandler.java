@@ -4,7 +4,6 @@ import at.technikum.domain.Media;
 import at.technikum.domain.User;
 import at.technikum.persistence.MediaRepository;
 import at.technikum.persistence.UserRepository;
-import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -15,165 +14,201 @@ import java.io.OutputStream;
 import java.util.List;
 
 public class MediaHandler implements HttpHandler {
-    private MediaRepository mediaRepository;
-    private UserRepository userRepository;
-    private ObjectMapper objectMapper;
 
+    private final MediaRepository mediaRepo;
+    private final UserRepository userRepo;
+    private final ObjectMapper mapper;
 
-    public MediaHandler(MediaRepository mediaRepository, UserRepository userRepository, ObjectMapper objectMapper) {
-        this.mediaRepository = mediaRepository;
-        this.userRepository = userRepository;
-        this.objectMapper = objectMapper;
+    public MediaHandler(MediaRepository mediaRepo, UserRepository userRepo, ObjectMapper mapper) {
+        this.mediaRepo = mediaRepo;
+        this.userRepo = userRepo;
+        this.mapper = mapper;
     }
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        final String method = exchange.getRequestMethod();
+        final String path = exchange.getRequestURI().getPath();
+
         try {
-            String Method = exchange.getRequestMethod();
-            String path = exchange.getRequestURI().getPath();
-
+            // --- /api/media ---
             if (path.equals("/api/media")) {
-                if ("GET".equals(Method)) {
-                    handleGetAll(exchange);
-                } else if ("POST".equals(Method)) {
-                    handleCreate(exchange);
-                } else {
-                    exchange.sendResponseHeaders(405, -1); // Method Not Allowed
+                switch (method.toUpperCase()) {
+                    case "GET" -> getAll(exchange);
+                    case "POST" -> createMedia(exchange);
+                    default -> sendJson(exchange, 405, "{\"message\":\"Method not allowed\"}");
                 }
-            } else if (path.startsWith("/api/media/")) {
-                String idString = path.substring("/api/media/".length());
-                int mediaId = Integer.parseInt(idString);
-
-                if ("PUT".equals(Method)) {
-                    handleUpdate(exchange, mediaId);
-                } else if ("DELETE".equals(Method)) {
-                    handleDelete(exchange, mediaId);
-                } else if ("GET".equals(Method)) {
-                    handleGetOne(exchange, mediaId);
-                } else {
-                    sendResponse(exchange, 405, "Method Not Allowed");
-                }
-            } else {
-                sendResponse(exchange, 404, "Not Found");
+                return;
             }
-        } catch (NumberFormatException e) {
-            sendResponse(exchange, 400, "Invalid media ID format");
-        } catch (Exception e) {
-            e.printStackTrace();
-            sendResponse(exchange, 500, "Internal Server Error");
+
+            // --- /api/media/{id} ---
+            if (path.startsWith("/api/media/")) {
+                int id = extractId(path);
+
+                switch (method.toUpperCase()) {
+                    case "GET" -> getOne(exchange, id);
+                    case "PUT" -> updateMedia(exchange, id);
+                    case "DELETE" -> deleteMedia(exchange, id);
+                    default -> sendJson(exchange, 405, "{\"message\":\"Method not allowed\"}");
+                }
+                return;
+            }
+
+            sendJson(exchange, 404, "{\"message\":\"Unknown route\"}");
+
+        } catch (NumberFormatException nfe) {
+            sendJson(exchange, 400, "{\"message\":\"Media ID must be numeric\"}");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            sendJson(exchange, 500, "{\"message\":\"Unexpected server error\"}");
         }
     }
 
-    private void handleGetAll(HttpExchange exchange) throws IOException {
-        List<Media> allMedia = mediaRepository.findAll();
-        String resonse = objectMapper.writeValueAsString(allMedia);
-        sendResponse(exchange, 200, resonse);
+    // --------------------------------------------------------------------
+    // GET: ALL MEDIA
+    // --------------------------------------------------------------------
+    private void getAll(HttpExchange exchange) throws IOException {
+        List<Media> result = mediaRepo.findAll();
+        sendJson(exchange, 200, mapper.writeValueAsString(result));
     }
 
-    private void handleGetOne(HttpExchange exchange, int id) throws IOException {
-        Media media = mediaRepository.findById(id);
-        if (media != null) {
-            sendResponse(exchange, 200, objectMapper.writeValueAsString(media));
-        } else {
-            sendResponse(exchange, 404, "Media not found");
+    // --------------------------------------------------------------------
+    // GET: SINGLE MEDIA
+    // --------------------------------------------------------------------
+    private void getOne(HttpExchange exchange, int id) throws IOException {
+        Media m = mediaRepo.findById(id);
+
+        if (m == null) {
+            sendJson(exchange, 404, "{\"message\":\"Media not found\"}");
+            return;
         }
+
+        sendJson(exchange, 200, mapper.writeValueAsString(m));
     }
-    private void handleCreate(HttpExchange exchange) throws IOException {
-        User user = checkAuth(exchange);
+
+    // --------------------------------------------------------------------
+    // CREATE MEDIA (AUTH REQUIRED)
+    // --------------------------------------------------------------------
+    private void createMedia(HttpExchange exchange) throws IOException {
+        User user = authorize(exchange);
         if (user == null) return;
 
-        InputStream requestBody = exchange.getRequestBody();
-        Media mediaInput = objectMapper.readValue(requestBody, Media.class);
+        Media input = readBody(exchange, Media.class);
 
-        Media mediaToSave = Media.builder()
-                .title(mediaInput.getTitle())
-                .mediaType(mediaInput.getMediaType())
-                .description(mediaInput.getDescription())
-                .releaseYear(mediaInput.getReleaseYear())
-                .ageRestriction(mediaInput.getAgeRestriction())
-                .genres(mediaInput.getGenres())
+        Media newMedia = Media.builder()
+                .title(input.getTitle())
+                .mediaType(input.getMediaType())
+                .description(input.getDescription())
+                .releaseYear(input.getReleaseYear())
+                .ageRestriction(input.getAgeRestriction())
+                .genres(input.getGenres())
                 .creatorId(user.getId())
                 .build();
-        Media savedMedia = mediaRepository.save(mediaToSave);
-        sendResponse(exchange, 201, objectMapper.writeValueAsString(savedMedia));
+
+        Media saved = mediaRepo.save(newMedia);
+        sendJson(exchange, 201, mapper.writeValueAsString(saved));
     }
 
-    private void handleUpdate(HttpExchange exchange, int mediaId) throws IOException {
-        User user = checkAuth(exchange);
+    // --------------------------------------------------------------------
+    // UPDATE MEDIA (MUST BE CREATOR)
+    // --------------------------------------------------------------------
+    private void updateMedia(HttpExchange exchange, int id) throws IOException {
+        User user = authorize(exchange);
         if (user == null) return;
 
-        Media existingMedia = mediaRepository.findById(mediaId);
-        if (existingMedia == null) {
-            sendResponse(exchange, 404, "Media not found");
-            return;
-        }
-        if (!existingMedia.getCreatorId().equals(user.getId())) {
-            sendResponse(exchange, 403, "Forbidden: You are not the creator of this media");
+        Media existing = mediaRepo.findById(id);
+
+        if (existing == null) {
+            sendJson(exchange, 404, "{\"message\":\"Media not found\"}");
             return;
         }
 
-        Media updateData = objectMapper.readValue(exchange.getRequestBody(), Media.class);
+        if (!existing.getCreatorId().equals(user.getId())) {
+            sendJson(exchange, 403, "{\"message\":\"Only creator may update this entry\"}");
+            return;
+        }
 
-        Media mediaToUpdate = Media.builder()
-                .id(mediaId)
-                .title(updateData.getTitle())
-                .mediaType(updateData.getMediaType())
-                .description(updateData.getDescription())
-                .releaseYear(updateData.getReleaseYear())
-                .ageRestriction(updateData.getAgeRestriction())
-                .genres(updateData.getGenres())
-                .creatorId(existingMedia.getCreatorId())
+        Media input = readBody(exchange, Media.class);
+
+        Media updated = Media.builder()
+                .id(id)
+                .title(input.getTitle())
+                .mediaType(input.getMediaType())
+                .description(input.getDescription())
+                .releaseYear(input.getReleaseYear())
+                .ageRestriction(input.getAgeRestriction())
+                .genres(input.getGenres())
+                .creatorId(existing.getCreatorId())
                 .build();
 
-        mediaRepository.update(mediaToUpdate);
-        sendResponse(exchange, 200, objectMapper.writeValueAsString(mediaToUpdate));
+        mediaRepo.update(updated);
+        sendJson(exchange, 200, mapper.writeValueAsString(updated));
     }
 
-    private void handleDelete(HttpExchange exchange, int mediaId) throws IOException {
-        User user = checkAuth(exchange);
+    // --------------------------------------------------------------------
+    // DELETE MEDIA (MUST BE CREATOR)
+    // --------------------------------------------------------------------
+    private void deleteMedia(HttpExchange exchange, int id) throws IOException {
+        User user = authorize(exchange);
         if (user == null) return;
 
-        Media existingMedia = mediaRepository.findById(mediaId);
-        if (existingMedia == null) {
-            sendResponse(exchange, 404, "Media not found");
-            return;
-        }
-        if (!existingMedia.getCreatorId().equals(user.getId())) {
-            sendResponse(exchange, 403, "Forbidden: You are not the creator of this media");
+        Media existing = mediaRepo.findById(id);
+
+        if (existing == null) {
+            sendJson(exchange, 404, "{\"message\":\"Media not found\"}");
             return;
         }
 
-        mediaRepository.delete(mediaId);
-        sendResponse(exchange, 204, "Media deleted successfully");
+        if (!existing.getCreatorId().equals(user.getId())) {
+            sendJson(exchange, 403, "{\"message\":\"Only creator may delete this media\"}");
+            return;
+        }
+
+        mediaRepo.delete(id);
+        sendJson(exchange, 204, "");
     }
 
-    //Hilfsmethoden
-    private User checkAuth(HttpExchange exchange) throws IOException {
-        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            sendResponse(exchange, 401, "Unauthorized: Missing or invalid token");
+    // --------------------------------------------------------------------
+    // AUTH HELPER
+    // --------------------------------------------------------------------
+    private User authorize(HttpExchange exchange) throws IOException {
+        String header = exchange.getRequestHeaders().getFirst("Authorization");
+
+        if (header == null || !header.startsWith("Bearer ")) {
+            sendJson(exchange, 401, "{\"message\":\"Missing or invalid token\"}");
             return null;
         }
-        String token = authHeader.substring(7);
-        String [] parts = token.split("-");
-        if (parts.length < 2) {
-            sendResponse(exchange, 401, "Unauthorized: Invalid token format");
-            return null;
-        }
-        String username = parts[0];
-        User user = userRepository.findByUsername(username);
+
+        String token = header.substring("Bearer ".length()).trim();
+        User user = userRepo.findByToken(token);
+
         if (user == null) {
-            sendResponse(exchange, 401, "Unauthorized: User not found");
+            sendJson(exchange, 401, "{\"message\":\"Token not recognized\"}");
             return null;
         }
+
         return user;
     }
 
-    private void sendResponse(HttpExchange exchange, int status, String message) throws IOException {
-        exchange.getResponseHeaders().set("Content-Type", "application/json");
-        exchange.sendResponseHeaders(status, message.length());
+    // --------------------------------------------------------------------
+    // GENERIC HELPERS
+    // --------------------------------------------------------------------
+    private int extractId(String path) {
+        return Integer.parseInt(path.substring("/api/media/".length()));
+    }
+
+    private <T> T readBody(HttpExchange exchange, Class<T> type) throws IOException {
+        try (InputStream is = exchange.getRequestBody()) {
+            return mapper.readValue(is, type);
+        }
+    }
+
+    private void sendJson(HttpExchange exchange, int status, String json) throws IOException {
+        byte[] bytes = json.getBytes();
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        exchange.sendResponseHeaders(status, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
-            os.write(message.getBytes());
+            os.write(bytes);
         }
     }
 }
-

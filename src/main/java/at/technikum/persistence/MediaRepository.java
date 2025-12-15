@@ -4,136 +4,139 @@ import at.technikum.data.Database;
 import at.technikum.domain.Media;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ArrayList;
 
 public class MediaRepository {
-    private final Database database;
 
-    public MediaRepository(Database database) {
-        this.database = database;
+    private final Database db;
+
+    public MediaRepository(Database db) {
+        this.db = db;
     }
 
+    // ---------------------------
+    // CREATE
+    // ---------------------------
     public Media save(Media media) {
-        String sql = "INSERT INTO media (media_type, title, description, release_year, age_restriction, genres, creator_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = database.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            statement.setString(1, media.getMediaType());
-            statement.setString(2, media.getTitle());
-            statement.setString(3, media.getDescription());
-            statement.setInt(4, media.getReleaseYear());
-            statement.setInt(5, media.getAgeRestriction());
-            String genresString = String.join(",", media.getGenres());
-            statement.setString(6, genresString);
-            statement.setInt(7, media.getCreatorId());
-            statement.executeUpdate();
+        final String sql = """
+            INSERT INTO media (media_type, title, description, release_year, age_restriction, genres, creator_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """;
 
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    return Media.builder()
-                            .id(generatedKeys.getInt(1))
-                            .title(media.getTitle())
-                            .mediaType(media.getMediaType())
-                            .description(media.getDescription())
-                            .releaseYear(media.getReleaseYear())
-                            .ageRestriction(media.getAgeRestriction())
-                            .genres(media.getGenres())
-                            .creatorId(media.getCreatorId())
-                            .build();
-                } else {
-                    throw new SQLException("Creating media failed, no ID obtained.");
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            fillStatement(ps, media);
+            ps.executeUpdate();
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    media.setId(keys.getInt(1));
+                    return media;
                 }
+                throw new SQLException("No generated ID returned");
             }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error saving media", e);
+        } catch (SQLException ex) {
+            throw new RuntimeException("Failed to store media entry", ex);
         }
     }
 
+    // ---------------------------
+    // READ ALL
+    // ---------------------------
     public List<Media> findAll() {
-        List<Media> mediaList = new ArrayList<>();
-        String sql = "SELECT * FROM media";
+        final String sql = "SELECT * FROM media ORDER BY id";
 
-        try (Connection conn = database.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql);
-             ResultSet rs = statement.executeQuery()) {
+        List<Media> list = new ArrayList<>();
+
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                mediaList.add(mapResultSet(rs));
+                list.add(map(rs));
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error finding media", e);
+
+        } catch (SQLException ex) {
+            throw new RuntimeException("Failed to load media entries", ex);
         }
-        return mediaList;
+
+        return list;
     }
 
+    // ---------------------------
+    // READ BY ID
+    // ---------------------------
     public Media findById(int id) {
-        String sql = "SELECT * FROM media WHERE id = ?";
+        final String sql = "SELECT * FROM media WHERE id = ?";
 
-        try (Connection conn = database.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            statement.setInt(1, id);
-            ResultSet rs = statement.executeQuery();
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                return mapResultSet(rs);
+                return map(rs);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error finding media by id", e);
+            return null;
+
+        } catch (SQLException ex) {
+            throw new RuntimeException("Failed to find media with id=" + id, ex);
         }
-        return null;
     }
 
+    // ---------------------------
+    // UPDATE
+    // ---------------------------
     public void update(Media media) {
-        String sql = "UPDATE media SET media_type = ?, title = ?, description = ?, release_year = ?, age_restriction = ?, genres = ?, creator_id = ? WHERE id = ?";
+        final String sql = """
+            UPDATE media
+            SET media_type = ?, title = ?, description = ?, release_year = ?, age_restriction = ?, genres = ?, creator_id = ?
+            WHERE id = ?
+            """;
 
-        try (Connection conn = database.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            statement.setString(1, media.getMediaType());
-            statement.setString(2, media.getTitle());
-            statement.setString(3, media.getDescription());
-            statement.setInt(4, media.getReleaseYear());
-            statement.setInt(5, media.getAgeRestriction());
-            String genresString = String.join(",", media.getGenres());
-            statement.setString(6, genresString);
-            statement.setInt(7, media.getCreatorId());
-            statement.setInt(8, media.getId());
-            statement.executeUpdate();
+            fillStatement(ps, media);
+            ps.setInt(8, media.getId());
+            ps.executeUpdate();
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error updating media", e);
+        } catch (SQLException ex) {
+            throw new RuntimeException("Failed to update media entry", ex);
         }
     }
 
+    // ---------------------------
+    // DELETE
+    // ---------------------------
     public void delete(int id) {
-        String sql = "DELETE FROM media WHERE id = ?";
+        final String sql = "DELETE FROM media WHERE id = ?";
 
-        try (Connection conn = database.getConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
+        try (Connection conn = db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            statement.setInt(1, id);
-            statement.executeUpdate();
+            ps.setInt(1, id);
+            ps.executeUpdate();
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error deleting media", e);
+        } catch (SQLException ex) {
+            throw new RuntimeException("Failed to delete media with id=" + id, ex);
         }
     }
 
-    //Hilfsmethode um ResultSet in Media zu mappen
-    private Media mapResultSet(ResultSet rs) throws SQLException {
-        String genresString = rs.getString("genres");
-        List<String> genresList = new ArrayList<>();
-        if (genresString != null && !genresString.isEmpty()) {
-            genresList = Arrays.asList(genresString.split(","));
-        }
+    // ---------------------------
+    // HELPER: Build Media object
+    // ---------------------------
+    private Media map(ResultSet rs) throws SQLException {
+        String genresRaw = rs.getString("genres");
+        List<String> genres = (genresRaw == null || genresRaw.isBlank())
+                ? new ArrayList<>()
+                : Arrays.asList(genresRaw.split(","));
+
         return Media.builder()
                 .id(rs.getInt("id"))
                 .mediaType(rs.getString("media_type"))
@@ -141,8 +144,21 @@ public class MediaRepository {
                 .description(rs.getString("description"))
                 .releaseYear(rs.getInt("release_year"))
                 .ageRestriction(rs.getInt("age_restriction"))
-                .genres(genresList)
+                .genres(genres)
                 .creatorId(rs.getInt("creator_id"))
                 .build();
+    }
+
+    // ---------------------------
+    // HELPER: Set SQL parameters
+    // ---------------------------
+    private void fillStatement(PreparedStatement ps, Media m) throws SQLException {
+        ps.setString(1, m.getMediaType());
+        ps.setString(2, m.getTitle());
+        ps.setString(3, m.getDescription());
+        ps.setInt(4, m.getReleaseYear());
+        ps.setInt(5, m.getAgeRestriction());
+        ps.setString(6, String.join(",", m.getGenres()));
+        ps.setInt(7, m.getCreatorId());
     }
 }

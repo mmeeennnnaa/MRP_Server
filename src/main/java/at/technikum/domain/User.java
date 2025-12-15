@@ -1,63 +1,102 @@
 package at.technikum.domain;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class User {
+
     private Integer id;
     private String username;
     private String password;
+    private String token;
 
+    // --- CONSTRUCTORS ---
     public User() {
-    }
-    public Integer getId() {
-        return id;
-    }
-    public String getUsername() {
-        return username;
-    }
-    public String getPassword() {
-        return password;
+        // empty constructor required for JSON mapping
     }
 
+    // --- GETTERS ---
+    public Integer getId() {
+        return this.id;
+    }
+
+    public String getUsername() {
+        return this.username;
+    }
+
+    public String getPassword() {
+        return this.password;
+    }
+
+    public String getToken() {
+        return this.token;
+    }
+
+    // --- SETTERS ---
     public void setId(Integer id) {
         this.id = id;
     }
+
     public void setUsername(String username) {
         this.username = username;
     }
+
     public void setPassword(String password) {
         this.password = password;
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", username='" + username + '\'' +
-                '}';
+    public void setToken(String token) {
+        this.token = token;
     }
 
+    // --- TOSTRING ---
+    @Override
+    public String toString() {
+        return "User{id=" + id + ", username='" + username + "'}";
+    }
+
+
+    // --- BUILDER ---
     public static UserBuilder builder() {
         return new UserBuilder();
     }
+
     public static class UserBuilder {
-        private final User user = new User();
+
+        private Integer id;
+        private String username;
+        private String password;
+        private String token;
+
         public UserBuilder id(Integer id) {
-            user.id = id;
+            this.id = id;
             return this;
         }
+
         public UserBuilder username(String username) {
-            user.username = username;
+            this.username = username;
             return this;
         }
+
         public UserBuilder password(String password) {
-            user.password = password;
+            this.password = password;
             return this;
         }
+
+        public UserBuilder token(String token) {
+            this.token = token;
+            return this;
+        }
+
         public User build() {
-            if(user.username == null || user.password == null) {
-                throw new IllegalStateException("username and password cannot be null");
+            if (username == null || password == null) {
+                throw new IllegalStateException("User requires both username and password");
             }
-            return user;
+
+            User u = new User();
+            u.id = this.id;
+            u.username = this.username;
+            u.password = this.password;
+            u.token = this.token;
+
+            return u;
         }
     }
 }

@@ -1,98 +1,95 @@
 package at.technikum.domain;
+
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
 import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MediaTest {
+class MediaTest {
 
     @Test
-    public void testSetAndGetId() {
+    void mediaShouldInitializeAllSettableProperties() {
         Media media = new Media();
-        media.setId(100);
-        assertEquals(100, media.getId());
+        //basisfelder eines media objekts
+        media.setId(42);
+        media.setTitle("Arrival");
+        media.setMediaType("Film");
+        media.setDescription("Alien linguistics");
+        media.setReleaseYear(2016);
+        media.setAgeRestriction(12);
+
+        //prüfen ob alle getter die korrekten werte zurückgeben
+        assertAll(
+                () -> assertEquals(42, media.getId()),
+                () -> assertEquals("Arrival", media.getTitle()),
+                () -> assertEquals("Film", media.getMediaType()),
+                () -> assertEquals("Alien linguistics", media.getDescription()),
+                () -> assertEquals(2016, media.getReleaseYear()),
+                () -> assertEquals(12, media.getAgeRestriction())
+        );
     }
 
     @Test
-    public void testSetAndGetTitle() {
+    void genresListShouldBeModifiableAndIndependent() {
         Media media = new Media();
-        media.setTitle("Inception");
-        assertEquals("Inception", media.getTitle());
-    }
+        // genre liste
+        List<String> genresInput = new ArrayList<>();
+        genresInput.add("Horror");
+        genresInput.add("Thriller");
 
-    @Test
-    public void testSetAndGetMediaType() {
-        Media media = new Media();
-        media.setMediaType("Movie");
-        assertEquals("Movie", media.getMediaType());
-    }
+        media.setGenres(genresInput);
 
-    @Test
-    public void testSetAndGetDescription() {
-        Media media = new Media();
-        media.setDescription("A mind-bending thriller");
-        assertEquals("A mind-bending thriller", media.getDescription());
-    }
-
-    @Test
-    public void testSetAndGetReleaseYear() {
-        Media media = new Media();
-        media.setReleaseYear(2010);
-        assertEquals(2010, media.getReleaseYear());
-    }
-
-    @Test
-    public void testSetAndGetAgeRestriction() {
-        Media media = new Media();
-        media.setAgeRestriction(13);
-        assertEquals(13, media.getAgeRestriction());
-    }
-
-    @Test
-    public void testSetAndGetGenres() {
-        Media media = new Media();
-        List<String> genres = List.of("Sci-Fi", "Thriller");
-        media.setGenres(genres);
-            assertNotNull(media.getGenres());
         assertEquals(2, media.getGenres().size());
-        assertTrue(media.getGenres().contains("Sci-Fi"));
+        assertTrue(media.getGenres().contains("Horror"));
+
+        // media darf nicht die gleiche referenz der liste verwenden -> muss eigene kopie anlegen
+        genresInput.add("Comedy");
+        assertEquals(2, media.getGenres().size());
     }
 
     @Test
-    public void testBuilderCreatesCorrectObject() {
-        Media media = Media.builder()
-                .id(1)
-                .title("The Matrix")
-                .mediaType("Movie")
+    void builderShouldConstructMediaWithSelectedValues() { // testet builder -> alternative art ein objekt zu erzeugen
+        Media created = Media.builder()
+                .id(11)
+                .title("Ghost in the Shell")
+                .mediaType("Anime")
+                .ageRestriction(16)
+                .releaseYear(1995)
+                .genres(List.of("Sci-Fi", "Cyberpunk"))
                 .build();
-        assertEquals(1, media.getId());
-        assertEquals("The Matrix", media.getTitle());
-        assertEquals("Movie", media.getMediaType());
-
+        // alle gesetzten werte überprüfen, builder in API zb beim erstellen neuer media einträge genutzt
+        assertAll(
+                () -> assertEquals(11, created.getId()),
+                () -> assertEquals("Ghost in the Shell", created.getTitle()),
+                () -> assertEquals("Anime", created.getMediaType()),
+                () -> assertEquals(16, created.getAgeRestriction()),
+                () -> assertEquals(1995, created.getReleaseYear()),
+                () -> assertEquals(2, created.getGenres().size())
+        );
     }
 
     @Test
-    void testEmptyGenreList() {
+    void creatorCanBeUpdatedIndependently() {
         Media media = new Media();
 
-        media.setGenres(List.of());
+        // prüfe ob creatorID korret gespeichert und veränderbar ist
+        media.setCreatorId(1);
+        assertEquals(1, media.getCreatorId());
 
-        assertNotNull(media.getGenres());
-        assertTrue(media.getGenres().isEmpty());
+        media.setCreatorId(99);
+        assertEquals(99, media.getCreatorId());
     }
 
     @Test
-    void testCreatorIdCanBeUpdated() {
+    void descriptionShouldAllowNullOrEmpty() {
         Media media = new Media();
-        media.setCreatorId(42);
+        // beschreibung darf optional sein
+        media.setDescription(null);
+        assertNull(media.getDescription());
 
-        media.setCreatorId(11);
-        assertEquals(11, media.getCreatorId());
-    }
-
-    @Test
-    void testAncientReleaseYear() {
-        Media media = new Media();
-        media.setReleaseYear(-500); // 500 v. Chr.
-        assertEquals(-500, media.getReleaseYear());
+        media.setDescription("");
+        assertEquals("", media.getDescription());
     }
 }

@@ -13,6 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - mrp_data:/var/lib/postgresql/data
+      - ./docker/db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
 
 volumes:
   mrp_data:

@@ -1,5 +1,6 @@
 package at.technikum.domain;
 
+import at.technikum.domain.User;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -126,4 +127,36 @@ class UserTest {
 
         assertNotSame(u1, u2);
     }
+
+    @Test
+    void builderWorksWithOnlyRequiredFields() {
+        User u = User.builder()
+                .username("minimalUser")
+                .password("minimalPass")
+                .build();
+
+        assertAll(
+                () -> assertNull(u.getId()),
+                () -> assertEquals("minimalUser", u.getUsername()),
+                () -> assertEquals("minimalPass", u.getPassword()),
+                () -> assertNull(u.getToken())
+        );
+    }
+
+    @Test
+    void usernameCanBeChangedMultipleTimes() {
+        User u = new User();
+
+        u.setUsername("firstName");
+        assertEquals("firstName", u.getUsername());
+
+        u.setUsername("secondName");
+        assertEquals("secondName", u.getUsername());
+
+        u.setUsername("thirdName");
+        assertEquals("thirdName", u.getUsername());
+    }
+
+
 }
+

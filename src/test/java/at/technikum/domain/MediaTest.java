@@ -1,5 +1,6 @@
 package at.technikum.domain;
 
+import at.technikum.domain.Media;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -92,4 +93,28 @@ class MediaTest {
         media.setDescription("");
         assertEquals("", media.getDescription());
     }
+
+    @Test
+    void ratingsListShouldStartEmpty() {
+        Media media = new Media();
+
+        assertNotNull(media.getRatings());
+        assertTrue(media.getRatings().isEmpty());
+    }
+
+    @Test
+    void idCanBeAssignedLater() {
+        Media media = new Media();
+
+        assertNull(media.getId());
+
+        media.setId(10);
+        assertEquals(10, media.getId());
+
+        media.setId(20);
+        assertEquals(20, media.getId());
+    }
+
+
+
 }

@@ -7,19 +7,19 @@ import java.util.List;
 
 public class Media {
 
-    private Integer id;
+    private Integer id; // integer kann null sein
     private String title;
     private String mediaType;
     private String description;
     private Integer releaseYear;
     private Integer ageRestriction;
-    private List<String> genres = new ArrayList<>();
+    private List<String> genres = new ArrayList<>(); // media kann mehrere genres haben
     private Integer creatorId;
-    private List<Rating> ratings = new ArrayList<>();
+    private List<Rating> ratings = new ArrayList<>(); // media kann mehrere bewertungen haben
 
 
     // ---------- CONSTRUCTOR ----------
-    public Media() {}
+    public Media() {} // object mapper braucht ihn
 
     // ---------- GETTERS ----------
     public Integer getId() {
@@ -79,7 +79,7 @@ public class Media {
         this.ageRestriction = ageRestriction;
     }
 
-    public void setGenres(List<String> genres) {
+    public void setGenres(List<String> genres) { // defensive copy, sonst könnte externe liste verändert werden
         this.genres = new ArrayList<>(genres);
     }
 
@@ -96,7 +96,7 @@ public class Media {
     }
 
 
-    // ---------- BUILDER ----------
+    // ---------- BUILDER ---------- //flexible und lesbare Objekterzeugung.
     public static MediaBuilder builder() {
         return new MediaBuilder();
     }
@@ -145,7 +145,7 @@ public class Media {
             return this;
         }
 
-        public Media build() {
+        public Media build() { // gibt fertiges objekt zrk
             return instance;
         }
     }

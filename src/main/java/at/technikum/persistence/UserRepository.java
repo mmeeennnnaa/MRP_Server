@@ -9,8 +9,8 @@ public class UserRepository {
 
     private final Database db;
 
-    public UserRepository(Database db) {
-        this.db = db;
+    public UserRepository(Database db) { //Eine Klasse, die alle Datenbankzugriffe für ein bestimmtes Domain-Objekt kapselt
+        this.db = db; // db von aussen übergeben
     }
 
     // -----------------------------
@@ -27,11 +27,11 @@ public class UserRepository {
 
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPassword());
-            ps.executeUpdate();
+            ps.executeUpdate(); // führt INSERT aus
 
-            try (ResultSet keys = ps.getGeneratedKeys()) {
+            try (ResultSet keys = ps.getGeneratedKeys()) { // holt vonn db erzeugte id
                 if (keys.next()) {
-                    User created = User.builder()
+                    User created = User.builder() // neues obj/user
                             .id(keys.getInt(1))
                             .username(user.getUsername())
                             .password(user.getPassword())
@@ -58,10 +58,10 @@ public class UserRepository {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
+            ResultSet rs = ps.executeQuery(); //Für SELECT, Gibt ein ResultSet zurück
 
-            if (rs.next()) {
-                return map(rs);
+            if (rs.next()) { // Wenn ein Datensatz existiert:
+                return map(rs); // DB-Zeile → User-Objekt
             }
 
         } catch (SQLException ex) {
@@ -80,7 +80,7 @@ public class UserRepository {
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, token);
+            ps.setString(1, token); // token wird user zugeordnet
             ps.setInt(2, userId);
             ps.executeUpdate();
 
@@ -101,7 +101,7 @@ public class UserRepository {
             ps.setString(1, token);
             ResultSet rs = ps.executeQuery();
 
-            if (rs.next()) {
+            if (rs.next()) { // falls gültiger token
                 return map(rs);
             }
 
@@ -115,7 +115,7 @@ public class UserRepository {
     // -----------------------------
     // HELPER: MAP RESULTSET → USER
     // -----------------------------
-    private User map(ResultSet rs) throws SQLException {
+    private User map(ResultSet rs) throws SQLException { // db zeile in ein userobjekt
         return User.builder()
                 .id(rs.getInt("id"))
                 .username(rs.getString("username"))
